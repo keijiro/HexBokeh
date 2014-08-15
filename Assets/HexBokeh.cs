@@ -8,8 +8,20 @@ public class HexBokeh : MonoBehaviour
     // Reference to the shader.
     [SerializeField] Shader shader;
 
+    // Focus settings.
+    public float focalLength = 10.0f;
+    [Range(0, 2)]
+    public float focalSize = 0.05f;
+    public float aperture = 11.5f;
+    public bool visualizeCoc;
+
     // Temporary objects.
     Material material;
+
+    void OnEnable()
+    {
+        camera.depthTextureMode |= DepthTextureMode.Depth;
+    }  
 
     void SetUpObjects()
     {
@@ -18,26 +30,44 @@ public class HexBokeh : MonoBehaviour
         material.hideFlags = HideFlags.DontSave;
     }
 
+    void UpdateFocus()
+    {
+        var point = focalLength * camera.transform.forward + camera.transform.position;
+        var dist01 = camera.WorldToViewportPoint(point).z / (camera.farClipPlane - camera.nearClipPlane);
+        material.SetVector("_CurveParams", new Vector4(1.0f, focalSize, aperture / 10.0f, dist01));
+    }
+
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        var rt1 = RenderTexture.GetTemporary(source.width / 2, source.height / 2, 0, source.format);
-        var rt2 = RenderTexture.GetTemporary(source.width / 2, source.height / 2, 0, source.format);
-        var rt3 = RenderTexture.GetTemporary(source.width / 2, source.height / 2, 0, source.format);
-
         SetUpObjects();
 
-        Graphics.Blit(source, rt3);
+        UpdateFocus();
 
-        Graphics.Blit(rt3, rt1, material, 0);
-        Graphics.Blit(rt3, rt2, material, 1);
+        Graphics.Blit(source, source, material, 0);
 
-        material.SetTexture("_BlurTex", rt2);
-        Graphics.Blit(rt1, rt3, material, 2);
+        if (visualizeCoc)
+        {
+            Graphics.Blit(source, destination, material, 1);
+        }
+        else
+        {
+            var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
 
-        Graphics.Blit(rt3, destination);
+            Graphics.Blit(source, rt1, material, 2);
+            Graphics.Blit(source, rt2, material, 3);
 
-        RenderTexture.ReleaseTemporary(rt1);
-        RenderTexture.ReleaseTemporary(rt2);
-        RenderTexture.ReleaseTemporary(rt3);
+            material.SetTexture("_BlurTex1", rt1);
+            material.SetTexture("_BlurTex2", rt2);
+            Graphics.Blit(source, destination, material, 4);
+
+            //Graphics.Blit(rt2, destination, material, 1);
+
+            material.SetTexture("_BlurTex1", null);
+            material.SetTexture("_BlurTex2", null);
+
+            RenderTexture.ReleaseTemporary(rt1);
+            RenderTexture.ReleaseTemporary(rt2);
+        }
     }
 }
