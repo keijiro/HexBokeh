@@ -14,6 +14,7 @@ public class HexBokeh : MonoBehaviour
     public float focalSize = 0.05f;
     public float aperture = 11.5f;
     public bool visualizeCoc;
+    public float maxDist = 1;
 
     // Temporary objects.
     Material material;
@@ -43,6 +44,8 @@ public class HexBokeh : MonoBehaviour
 
         UpdateFocus();
 
+        material.SetFloat("_MaxDist", maxDist);
+
         Graphics.Blit(source, source, material, 0);
 
         if (visualizeCoc)
@@ -61,7 +64,7 @@ public class HexBokeh : MonoBehaviour
             material.SetTexture("_BlurTex2", rt2);
             Graphics.Blit(source, destination, material, 4);
 
-            //Graphics.Blit(rt2, destination, material, 1);
+            //Graphics.Blit(rt1, destination, material, 1);
 
             material.SetTexture("_BlurTex1", null);
             material.SetTexture("_BlurTex2", null);

@@ -19,6 +19,8 @@
     sampler2D _BlurTex2;
     float4 _BlurTex2_TexelSize;
 
+    float _MaxDist;
+
     sampler2D_float _CameraDepthTexture;
 
     // 1, focal_size, 1/aperture, distance01
@@ -66,7 +68,7 @@
         o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 
         float4 uv = v.texcoord.xyxy;
-        float4 d = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1);
+        float4 d = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1) * _MaxDist;
 
         o.uv_01 = uv + d * float4(0, 0, 1, 1);
         o.uv_23 = uv + d * float4(2, 2, 3, 3);
@@ -89,14 +91,15 @@
         float4 c = zero;
 
         c += c1;
-        c += c2.a > 100.17 ? c2 : zero;
-        c += c3.a > 100.33 ? c3 : zero;
-        c += c4.a > 100.50 ? c4 : zero;
-        c += c5.a > 100.67 ? c5 : zero;
-        c += c6.a > 100.83 ? c6 : zero;
+        c += c2.a > 100.167 ? c2 : zero;
+        c += c3.a > 100.333 ? c3 : zero;
+        c += c4.a > 100.500 ? c4 : zero;
+        c += c5.a > 100.667 ? c5 : zero;
+        c += c6.a > 100.833 ? c6 : zero;
 
         float samples = floor(c.a * 0.01);
-        c.a = c.a - samples * 100;
+        //c.a = c.a - samples * 100;
+        c.a = (c1.a - 100) * samples;
         return c / samples;
     }
 
@@ -121,8 +124,8 @@
         o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 
         float4 uv = v.texcoord.xyxy;
-        float4 d1 = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1);
-        float4 d2 = _MainTex_TexelSize.xyxy * float4(0.866, 0.5, 0.866, 0.5);
+        float4 d1 = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1) * _MaxDist;
+        float4 d2 = _MainTex_TexelSize.xyxy * float4(0.866, 0.5, 0.866, 0.5) * _MaxDist;
 
         o.uva_01 = uv + d1 * float4(0, 0, 1, 1);
         o.uva_23 = uv + d1 * float4(2, 2, 3, 3);
@@ -156,22 +159,23 @@
         float4 c = zero;
 
         c += ca1;
-        c += ca2.a > 100.17 ? ca2 : zero;
-        c += ca3.a > 100.33 ? ca3 : zero;
-        c += ca4.a > 100.50 ? ca4 : zero;
-        c += ca5.a > 100.67 ? ca5 : zero;
-        c += ca6.a > 100.83 ? ca6 : zero;
+        c += ca2.a > 100.167 ? ca2 : zero;
+        c += ca3.a > 100.333 ? ca3 : zero;
+        c += ca4.a > 100.500 ? ca4 : zero;
+        c += ca5.a > 100.667 ? ca5 : zero;
+        c += ca6.a > 100.833 ? ca6 : zero;
 
 //      c += cb1;
-        c += cb2.a > 100.17 ? cb2 : zero;
-        c += cb3.a > 100.33 ? cb3 : zero;
-        c += cb4.a > 100.50 ? cb4 : zero;
-        c += cb5.a > 100.67 ? cb5 : zero;
-        c += cb6.a > 100.83 ? cb6 : zero;
+        c += cb2.a > 100.167 ? cb2 : zero;
+        c += cb3.a > 100.333 ? cb3 : zero;
+        c += cb4.a > 100.500 ? cb4 : zero;
+        c += cb5.a > 100.667 ? cb5 : zero;
+        c += cb6.a > 100.833 ? cb6 : zero;
         
 
         float samples = floor(c.a * 0.01);
-        c.a = c.a - samples * 100.0;
+        //c.a = c.a - samples * 100.0;
+        c.a = (ca1.a - 100) * samples;
         return c / samples;
     }
 
@@ -196,8 +200,8 @@
         o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 
         float4 uv = v.texcoord.xyxy;
-        float4 d1 = _MainTex_TexelSize.xyxy * float4( 0.866, 0.5,  0.866, 0.5);
-        float4 d2 = _MainTex_TexelSize.xyxy * float4(-0.866, 0.5, -0.866, 0.5);
+        float4 d1 = _MainTex_TexelSize.xyxy * float4( 0.866, 0.5,  0.866, 0.5) * _MaxDist;
+        float4 d2 = _MainTex_TexelSize.xyxy * float4(-0.866, 0.5, -0.866, 0.5) * _MaxDist;
 
         o.uva_01 = uv + d1 * float4(0, 0, 1, 1);
         o.uva_23 = uv + d1 * float4(2, 2, 3, 3);
@@ -231,18 +235,18 @@
         float4 c = zero;
 
         c += ca1;
-        c += ca2.a > 100.17 ? ca2 : zero;
-        c += ca3.a > 100.33 ? ca3 : zero;
-        c += ca4.a > 100.50 ? ca4 : zero;
-        c += ca5.a > 100.67 ? ca5 : zero;
-        c += ca6.a > 100.83 ? ca6 : zero;
+        c += ca2.a > 100.167 ? ca2 : zero;
+        c += ca3.a > 100.333 ? ca3 : zero;
+        c += ca4.a > 100.500 ? ca4 : zero;
+        c += ca5.a > 100.667 ? ca5 : zero;
+        c += ca6.a > 100.833 ? ca6 : zero;
 
         //c += cb1;
-        c += cb2.a > 100.17 ? cb2 : zero;
-        c += cb3.a > 100.33 ? cb3 : zero;
-        c += cb4.a > 100.50 ? cb4 : zero;
-        c += cb5.a > 100.67 ? cb5 : zero;
-        c += cb6.a > 100.83 ? cb6 : zero;
+        c += cb2.a > 100.167 ? cb2 : zero;
+        c += cb3.a > 100.333 ? cb3 : zero;
+        c += cb4.a > 100.500 ? cb4 : zero;
+        c += cb5.a > 100.667 ? cb5 : zero;
+        c += cb6.a > 100.833 ? cb6 : zero;
 
         return c / floor(c.a * 0.01f);
     }

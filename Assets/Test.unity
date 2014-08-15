@@ -1262,7 +1262,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 407187949}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 10}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 707551814}
@@ -1404,10 +1404,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 4800000, guid: a79ad3c08a37149b68459b8d3b0b432e, type: 3}
-  focalLength: 3.99000001
+  focalLength: 5
   focalSize: .129999995
-  aperture: 32.9900017
+  aperture: 6.92999983
   visualizeCoc: 0
+  maxDist: 2.17000008
 --- !u!1 &1072975546
 GameObject:
   m_ObjectHideFlags: 0
@@ -1535,7 +1536,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1114650514}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.60000002, y: 3.5, z: 35.5}
+  m_LocalPosition: {x: 1.60000002, y: 3.5, z: 34.7999992}
   m_LocalScale: {x: .0199999996, y: .0199999996, z: .0199999996}
   m_Children: []
   m_Father: {fileID: 0}
