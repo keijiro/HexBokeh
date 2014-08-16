@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿// Polygonal Bokeh
+// http://ivizlab.sfu.ca/papers/cgf2012.pdf
+
+using UnityEngine;
 using System.Collections;
 
 [ExecuteInEditMode]
@@ -57,12 +60,6 @@ public class HexBokeh : MonoBehaviour
             var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
             var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
             var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-            
-            /*
-            source.filterMode = FilterMode.Point;
-            rt1.filterMode = FilterMode.Point;
-            rt2.filterMode = FilterMode.Point;
-            */
 
             material.SetVector("_BlurDisp", new Vector4(1, 0, -1, 0) * maxDist);
             Graphics.Blit(source, rt1, material, 2);

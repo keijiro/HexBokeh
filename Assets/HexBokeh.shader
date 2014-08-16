@@ -37,8 +37,8 @@
     float4 frag_write_coc(v2f_img i) : SV_Target
     {
         float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy));
-        d = _CurveParams.z * abs(d - _CurveParams.w) / (d + 1e-5f);
-        return float4(0, 0, 0, saturate(d - _CurveParams.y));
+        d = _CurveParams.z * (d - _CurveParams.w) / (d + 1e-5f);
+        return float4(0, 0, 0, (d < 0 ? -0.5 : 0.5) * saturate(abs(d) - _CurveParams.y) + 0.5);
     }
 
     //
@@ -98,14 +98,14 @@
         float s = 1;
         float ca = c.a;
 
-        if (min(c_1.a, ca) > 0.20) { c += c_1; s += 1; }
-        if (min(c_2.a, ca) > 0.20) { c += c_2; s += 1; }
-        if (min(c_3.a, ca) > 0.40) { c += c_3; s += 1; }
-        if (min(c_4.a, ca) > 0.40) { c += c_4; s += 1; }
-        if (min(c_5.a, ca) > 0.60) { c += c_5; s += 1; }
-        if (min(c_6.a, ca) > 0.60) { c += c_6; s += 1; }
-        if (min(c_7.a, ca) > 0.80) { c += c_7; s += 1; }
-        if (min(c_8.a, ca) > 0.80) { c += c_8; s += 1; }
+        if (abs(min(c_1.a, ca) * 2 - 1) > 0.20) { c += c_1; s += 1; }
+        if (abs(min(c_2.a, ca) * 2 - 1) > 0.20) { c += c_2; s += 1; }
+        if (abs(min(c_3.a, ca) * 2 - 1) > 0.40) { c += c_3; s += 1; }
+        if (abs(min(c_4.a, ca) * 2 - 1) > 0.40) { c += c_4; s += 1; }
+        if (abs(min(c_5.a, ca) * 2 - 1) > 0.60) { c += c_5; s += 1; }
+        if (abs(min(c_6.a, ca) * 2 - 1) > 0.60) { c += c_6; s += 1; }
+        if (abs(min(c_7.a, ca) * 2 - 1) > 0.80) { c += c_7; s += 1; }
+        if (abs(min(c_8.a, ca) * 2 - 1) > 0.80) { c += c_8; s += 1; }
 
         return c / s;
     }
@@ -119,6 +119,7 @@
         float4 c1 = tex2D(_BlurTex1, i.uv);
         float4 c2 = tex2D(_BlurTex2, i.uv);
         return min(c1, c2);
+        //return Luminance(c1) < Luminance(c2) ? c1 : c2;
     }
 
     ENDCG 
