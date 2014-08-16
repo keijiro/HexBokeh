@@ -56,21 +56,33 @@ public class HexBokeh : MonoBehaviour
         {
             var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
             var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            
+            /*
+            source.filterMode = FilterMode.Point;
+            rt1.filterMode = FilterMode.Point;
+            rt2.filterMode = FilterMode.Point;
+            */
 
+            material.SetVector("_BlurDisp", new Vector4(1, 0, -1, 0) * maxDist);
             Graphics.Blit(source, rt1, material, 2);
-            Graphics.Blit(source, rt2, material, 3);
 
-            material.SetTexture("_BlurTex1", rt1);
-            material.SetTexture("_BlurTex2", rt2);
-            Graphics.Blit(source, destination, material, 4);
+            material.SetVector("_BlurDisp", new Vector4(-0.5f, -1, 0.5f, 1) * maxDist);
+            Graphics.Blit(rt1, rt2, material, 2);
 
-            //Graphics.Blit(rt1, destination, material, 1);
+            material.SetVector("_BlurDisp", new Vector4(0.5f, -1, -0.5f, 1) * maxDist);
+            Graphics.Blit(rt1, rt3, material, 2);
+
+            material.SetTexture("_BlurTex1", rt2);
+            material.SetTexture("_BlurTex2", rt3);
+            Graphics.Blit(source, destination, material, 3);
 
             material.SetTexture("_BlurTex1", null);
             material.SetTexture("_BlurTex2", null);
 
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);
+            RenderTexture.ReleaseTemporary(rt3);
         }
     }
 }

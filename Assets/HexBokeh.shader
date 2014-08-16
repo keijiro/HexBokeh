@@ -19,6 +19,7 @@
     sampler2D _BlurTex2;
     float4 _BlurTex2_TexelSize;
 
+    float4 _BlurDisp;
     float _MaxDist;
 
     sampler2D_float _CameraDepthTexture;
@@ -51,204 +52,73 @@
     }
 
     //
-    // 3rd pass - upward blur filter
+    // 3rd pass - separable blur filter
     //
 
-    struct v2f_blur1
+    struct v2f_blur
     {
-        float4 pos : SV_POSITION;
-        float4 uv_01 : TEXCOORD0;
-        float4 uv_23 : TEXCOORD1;
-        float4 uv_45 : TEXCOORD2;
+        float4 pos   : SV_POSITION;
+        float2 uv    : TEXCOORD0;
+        float4 uv_12 : TEXCOORD1;
+        float4 uv_34 : TEXCOORD2;
+        float4 uv_56 : TEXCOORD3;
+        float4 uv_78 : TEXCOORD4;
     };
 
-    v2f_blur1 vert_blur1(appdata_img v)
+    v2f_blur vert_blur(appdata_img v)
     {
-        v2f_blur1 o;
+        v2f_blur o;
+
         o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 
         float4 uv = v.texcoord.xyxy;
-        float4 d = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1) * _MaxDist;
+        float4 d = _MainTex_TexelSize.xyxy * _BlurDisp;
 
-        o.uv_01 = uv + d * float4(0, 0, 1, 1);
-        o.uv_23 = uv + d * float4(2, 2, 3, 3);
-        o.uv_45 = uv + d * float4(4, 4, 5, 5);
+        o.uv    = uv;
+        o.uv_12 = uv + d;
+        o.uv_34 = uv + d * 2;
+        o.uv_56 = uv + d * 3;
+        o.uv_78 = uv + d * 4;
 
         return o;
     }
 
-    float4 frag_blur1(v2f_blur1 i) : SV_Target 
+    float4 frag_blur(v2f_blur i) : SV_Target 
     {
-        static const float4 offs = float4(0, 0, 0, 100);
+        float4 c   = tex2D(_MainTex, i.uv);
+        float4 c_1 = tex2D(_MainTex, i.uv_12.xy);
+        float4 c_2 = tex2D(_MainTex, i.uv_12.zw);
+        float4 c_3 = tex2D(_MainTex, i.uv_34.xy);
+        float4 c_4 = tex2D(_MainTex, i.uv_34.zw);
+        float4 c_5 = tex2D(_MainTex, i.uv_56.xy);
+        float4 c_6 = tex2D(_MainTex, i.uv_56.zw);
+        float4 c_7 = tex2D(_MainTex, i.uv_78.xy);
+        float4 c_8 = tex2D(_MainTex, i.uv_78.zw);
 
-        float4 c1 = tex2D(_MainTex, i.uv_01.xy) + offs;
-        float4 c2 = tex2D(_MainTex, i.uv_01.zw) + offs;
-        float4 c3 = tex2D(_MainTex, i.uv_23.xy) + offs;
-        float4 c4 = tex2D(_MainTex, i.uv_23.zw) + offs;
-        float4 c5 = tex2D(_MainTex, i.uv_45.xy) + offs;
-        float4 c6 = tex2D(_MainTex, i.uv_45.zw) + offs;
+        float s = 1;
+        float ca = c.a;
 
-        float4 c = zero;
+        if (min(c_1.a, ca) > 0.20) { c += c_1; s += 1; }
+        if (min(c_2.a, ca) > 0.20) { c += c_2; s += 1; }
+        if (min(c_3.a, ca) > 0.40) { c += c_3; s += 1; }
+        if (min(c_4.a, ca) > 0.40) { c += c_4; s += 1; }
+        if (min(c_5.a, ca) > 0.60) { c += c_5; s += 1; }
+        if (min(c_6.a, ca) > 0.60) { c += c_6; s += 1; }
+        if (min(c_7.a, ca) > 0.80) { c += c_7; s += 1; }
+        if (min(c_8.a, ca) > 0.80) { c += c_8; s += 1; }
 
-        c += c1;
-        c += min(c2.a, c1.a) > 100.167 ? c2 : zero;
-        c += min(c3.a, c1.a) > 100.333 ? c3 : zero;
-        c += min(c4.a, c1.a) > 100.500 ? c4 : zero;
-        c += min(c5.a, c1.a) > 100.667 ? c5 : zero;
-        c += min(c6.a, c1.a) > 100.833 ? c6 : zero;
-
-        float samples = floor(c.a * 0.01);
-        //c.a = c.a - samples * 100;
-        c.a = (c1.a - 100) * samples;
-        return c / samples;
+        return c / s;
     }
 
     //
-    // 4th pass - skewed blur filter
+    // 4th pass - combiner
     //
 
-    struct v2f_blur2
+    float4 frag_final(v2f_img i) : SV_Target 
     {
-        float4 pos : SV_POSITION;
-        float4 uva_01 : TEXCOORD0;
-        float4 uva_23 : TEXCOORD1;
-        float4 uva_45 : TEXCOORD2;
-        float4 uvb_01 : TEXCOORD3;
-        float4 uvb_23 : TEXCOORD4;
-        float4 uvb_45 : TEXCOORD5;
-    };
-
-    v2f_blur2 vert_blur2(appdata_img v)
-    {
-        v2f_blur2 o;
-        o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
-
-        float4 uv = v.texcoord.xyxy;
-        float4 d1 = _MainTex_TexelSize.xyxy * float4(0, -1, 0, -1) * _MaxDist;
-        float4 d2 = _MainTex_TexelSize.xyxy * float4(0.866, 0.5, 0.866, 0.5) * _MaxDist;
-
-        o.uva_01 = uv + d1 * float4(0, 0, 1, 1);
-        o.uva_23 = uv + d1 * float4(2, 2, 3, 3);
-        o.uva_45 = uv + d1 * float4(4, 4, 5, 5);
-
-        o.uvb_01 = uv + d2 * float4(0, 0, 1, 1);
-        o.uvb_23 = uv + d2 * float4(2, 2, 3, 3);
-        o.uvb_45 = uv + d2 * float4(4, 4, 5, 5);
-
-        return o;
-    }
-
-    float4 frag_blur2(v2f_blur2 i) : SV_Target 
-    {
-        static const float4 offs = float4(0, 0, 0, 100);
-
-        float4 ca1 = tex2D(_MainTex, i.uva_01.xy) + offs;
-        float4 ca2 = tex2D(_MainTex, i.uva_01.zw) + offs;
-        float4 ca3 = tex2D(_MainTex, i.uva_23.xy) + offs;
-        float4 ca4 = tex2D(_MainTex, i.uva_23.zw) + offs;
-        float4 ca5 = tex2D(_MainTex, i.uva_45.xy) + offs;
-        float4 ca6 = tex2D(_MainTex, i.uva_45.zw) + offs;
-
-        float4 cb1 = tex2D(_MainTex, i.uvb_01.xy) + offs;
-        float4 cb2 = tex2D(_MainTex, i.uvb_01.zw) + offs;
-        float4 cb3 = tex2D(_MainTex, i.uvb_23.xy) + offs;
-        float4 cb4 = tex2D(_MainTex, i.uvb_23.zw) + offs;
-        float4 cb5 = tex2D(_MainTex, i.uvb_45.xy) + offs;
-        float4 cb6 = tex2D(_MainTex, i.uvb_45.zw) + offs;
-
-        float4 c = zero;
-
-        c += ca1;
-        c += min(ca2.a, ca1.a) > 100.167 ? ca2 : zero;
-        c += min(ca3.a, ca1.a) > 100.333 ? ca3 : zero;
-        c += min(ca4.a, ca1.a) > 100.500 ? ca4 : zero;
-        c += min(ca5.a, ca1.a) > 100.667 ? ca5 : zero;
-        c += min(ca6.a, ca1.a) > 100.833 ? ca6 : zero;
-
-//      c += cb1;
-        c += min(cb2.a, cb1.a) > 100.167 ? cb2 : zero;
-        c += min(cb3.a, cb1.a) > 100.333 ? cb3 : zero;
-        c += min(cb4.a, cb1.a) > 100.500 ? cb4 : zero;
-        c += min(cb5.a, cb1.a) > 100.667 ? cb5 : zero;
-        c += min(cb6.a, cb1.a) > 100.833 ? cb6 : zero;
-        
-
-        float samples = floor(c.a * 0.01);
-        //c.a = c.a - samples * 100.0;
-        c.a = (ca1.a - 100) * samples;
-        return c / samples;
-    }
-
-    //
-    // 5th pass - final blur filter
-    //
-
-    struct v2f_blur3
-    {
-        float4 pos : SV_POSITION;
-        float4 uva_01 : TEXCOORD0;
-        float4 uva_23 : TEXCOORD1;
-        float4 uva_45 : TEXCOORD2;
-        float4 uvb_01 : TEXCOORD3;
-        float4 uvb_23 : TEXCOORD4;
-        float4 uvb_45 : TEXCOORD5;
-    };
-
-    v2f_blur3 vert_blur3(appdata_img v)
-    {
-        v2f_blur3 o;
-        o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
-
-        float4 uv = v.texcoord.xyxy;
-        float4 d1 = _MainTex_TexelSize.xyxy * float4( 0.866, 0.5,  0.866, 0.5) * _MaxDist;
-        float4 d2 = _MainTex_TexelSize.xyxy * float4(-0.866, 0.5, -0.866, 0.5) * _MaxDist;
-
-        o.uva_01 = uv + d1 * float4(0, 0, 1, 1);
-        o.uva_23 = uv + d1 * float4(2, 2, 3, 3);
-        o.uva_45 = uv + d1 * float4(4, 4, 5, 5);
-
-        o.uvb_01 = uv + d2 * float4(0, 0, 1, 1);
-        o.uvb_23 = uv + d2 * float4(2, 2, 3, 3);
-        o.uvb_45 = uv + d2 * float4(4, 4, 5, 5);
-
-        return o;
-    }
-
-    float4 frag_blur3(v2f_blur3 i) : SV_Target 
-    {
-        static const float4 offs = float4(0, 0, 0, 100);
-
-        float4 ca1 = tex2D(_BlurTex1, i.uva_01.xy) + offs;
-        float4 ca2 = tex2D(_BlurTex1, i.uva_01.zw) + offs;
-        float4 ca3 = tex2D(_BlurTex1, i.uva_23.xy) + offs;
-        float4 ca4 = tex2D(_BlurTex1, i.uva_23.zw) + offs;
-        float4 ca5 = tex2D(_BlurTex1, i.uva_45.xy) + offs;
-        float4 ca6 = tex2D(_BlurTex1, i.uva_45.zw) + offs;
-
-        float4 cb1 = tex2D(_BlurTex2, i.uvb_01.xy) + offs;
-        float4 cb2 = tex2D(_BlurTex2, i.uvb_01.zw) + offs;
-        float4 cb3 = tex2D(_BlurTex2, i.uvb_23.xy) + offs;
-        float4 cb4 = tex2D(_BlurTex2, i.uvb_23.zw) + offs;
-        float4 cb5 = tex2D(_BlurTex2, i.uvb_45.xy) + offs;
-        float4 cb6 = tex2D(_BlurTex2, i.uvb_45.zw) + offs;
-
-        float4 c = zero;
-
-        c += ca1;
-        c += min(ca2.a, ca1.a) > 100.167 ? ca2 : zero;
-        c += min(ca3.a, ca1.a) > 100.333 ? ca3 : zero;
-        c += min(ca4.a, ca1.a) > 100.500 ? ca4 : zero;
-        c += min(ca5.a, ca1.a) > 100.667 ? ca5 : zero;
-        c += min(ca6.a, ca1.a) > 100.833 ? ca6 : zero;
-
-        //c += cb1;
-        c += min(cb2.a, cb1.a) > 100.167 ? cb2 : zero;
-        c += min(cb3.a, cb1.a) > 100.333 ? cb3 : zero;
-        c += min(cb4.a, cb1.a) > 100.500 ? cb4 : zero;
-        c += min(cb5.a, cb1.a) > 100.667 ? cb5 : zero;
-        c += min(cb6.a, cb1.a) > 100.833 ? cb6 : zero;
-
-        return c / floor(c.a * 0.01f);
+        float4 c1 = tex2D(_BlurTex1, i.uv);
+        float4 c2 = tex2D(_BlurTex2, i.uv);
+        return min(c1, c2);
     }
 
     ENDCG 
@@ -282,7 +152,7 @@
             ENDCG
         }
 
-        // 3rd pass - upward blur filter
+        // 3rd pass - separable blur filter
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -290,12 +160,12 @@
             CGPROGRAM
             #pragma glsl
             #pragma target 3.0
-            #pragma vertex vert_blur1
-            #pragma fragment frag_blur1
+            #pragma vertex vert_blur
+            #pragma fragment frag_blur
             ENDCG
         }
 
-        // 4th pass - skewed blur filter
+        // 5th pass - combiner
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -303,21 +173,8 @@
             CGPROGRAM
             #pragma glsl
             #pragma target 3.0
-            #pragma vertex vert_blur2
-            #pragma fragment frag_blur2
-            ENDCG
-        }
-
-        // 5th pass - final blur filter
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            Fog { Mode off }      
-            CGPROGRAM
-            #pragma glsl
-            #pragma target 3.0
-            #pragma vertex vert_blur3
-            #pragma fragment frag_blur3
+            #pragma vertex vert_img
+            #pragma fragment frag_final
             #pragma glsl
             ENDCG
         }
