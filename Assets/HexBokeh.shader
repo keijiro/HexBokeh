@@ -91,11 +91,11 @@
         float4 c = zero;
 
         c += c1;
-        c += c2.a > 100.167 ? c2 : zero;
-        c += c3.a > 100.333 ? c3 : zero;
-        c += c4.a > 100.500 ? c4 : zero;
-        c += c5.a > 100.667 ? c5 : zero;
-        c += c6.a > 100.833 ? c6 : zero;
+        c += min(c2.a, c1.a) > 100.167 ? c2 : zero;
+        c += min(c3.a, c1.a) > 100.333 ? c3 : zero;
+        c += min(c4.a, c1.a) > 100.500 ? c4 : zero;
+        c += min(c5.a, c1.a) > 100.667 ? c5 : zero;
+        c += min(c6.a, c1.a) > 100.833 ? c6 : zero;
 
         float samples = floor(c.a * 0.01);
         //c.a = c.a - samples * 100;
@@ -149,7 +149,7 @@
         float4 ca5 = tex2D(_MainTex, i.uva_45.xy) + offs;
         float4 ca6 = tex2D(_MainTex, i.uva_45.zw) + offs;
 
-//      float4 cb1 = tex2D(_MainTex, i.uvb_01.xy) + offs;
+        float4 cb1 = tex2D(_MainTex, i.uvb_01.xy) + offs;
         float4 cb2 = tex2D(_MainTex, i.uvb_01.zw) + offs;
         float4 cb3 = tex2D(_MainTex, i.uvb_23.xy) + offs;
         float4 cb4 = tex2D(_MainTex, i.uvb_23.zw) + offs;
@@ -159,18 +159,18 @@
         float4 c = zero;
 
         c += ca1;
-        c += ca2.a > 100.167 ? ca2 : zero;
-        c += ca3.a > 100.333 ? ca3 : zero;
-        c += ca4.a > 100.500 ? ca4 : zero;
-        c += ca5.a > 100.667 ? ca5 : zero;
-        c += ca6.a > 100.833 ? ca6 : zero;
+        c += min(ca2.a, ca1.a) > 100.167 ? ca2 : zero;
+        c += min(ca3.a, ca1.a) > 100.333 ? ca3 : zero;
+        c += min(ca4.a, ca1.a) > 100.500 ? ca4 : zero;
+        c += min(ca5.a, ca1.a) > 100.667 ? ca5 : zero;
+        c += min(ca6.a, ca1.a) > 100.833 ? ca6 : zero;
 
 //      c += cb1;
-        c += cb2.a > 100.167 ? cb2 : zero;
-        c += cb3.a > 100.333 ? cb3 : zero;
-        c += cb4.a > 100.500 ? cb4 : zero;
-        c += cb5.a > 100.667 ? cb5 : zero;
-        c += cb6.a > 100.833 ? cb6 : zero;
+        c += min(cb2.a, cb1.a) > 100.167 ? cb2 : zero;
+        c += min(cb3.a, cb1.a) > 100.333 ? cb3 : zero;
+        c += min(cb4.a, cb1.a) > 100.500 ? cb4 : zero;
+        c += min(cb5.a, cb1.a) > 100.667 ? cb5 : zero;
+        c += min(cb6.a, cb1.a) > 100.833 ? cb6 : zero;
         
 
         float samples = floor(c.a * 0.01);
@@ -225,7 +225,7 @@
         float4 ca5 = tex2D(_BlurTex1, i.uva_45.xy) + offs;
         float4 ca6 = tex2D(_BlurTex1, i.uva_45.zw) + offs;
 
-        //float4 cb1 = tex2D(_BlurTex2, i.uvb_01.xy) + offs;
+        float4 cb1 = tex2D(_BlurTex2, i.uvb_01.xy) + offs;
         float4 cb2 = tex2D(_BlurTex2, i.uvb_01.zw) + offs;
         float4 cb3 = tex2D(_BlurTex2, i.uvb_23.xy) + offs;
         float4 cb4 = tex2D(_BlurTex2, i.uvb_23.zw) + offs;
@@ -235,18 +235,18 @@
         float4 c = zero;
 
         c += ca1;
-        c += ca2.a > 100.167 ? ca2 : zero;
-        c += ca3.a > 100.333 ? ca3 : zero;
-        c += ca4.a > 100.500 ? ca4 : zero;
-        c += ca5.a > 100.667 ? ca5 : zero;
-        c += ca6.a > 100.833 ? ca6 : zero;
+        c += min(ca2.a, ca1.a) > 100.167 ? ca2 : zero;
+        c += min(ca3.a, ca1.a) > 100.333 ? ca3 : zero;
+        c += min(ca4.a, ca1.a) > 100.500 ? ca4 : zero;
+        c += min(ca5.a, ca1.a) > 100.667 ? ca5 : zero;
+        c += min(ca6.a, ca1.a) > 100.833 ? ca6 : zero;
 
         //c += cb1;
-        c += cb2.a > 100.167 ? cb2 : zero;
-        c += cb3.a > 100.333 ? cb3 : zero;
-        c += cb4.a > 100.500 ? cb4 : zero;
-        c += cb5.a > 100.667 ? cb5 : zero;
-        c += cb6.a > 100.833 ? cb6 : zero;
+        c += min(cb2.a, cb1.a) > 100.167 ? cb2 : zero;
+        c += min(cb3.a, cb1.a) > 100.333 ? cb3 : zero;
+        c += min(cb4.a, cb1.a) > 100.500 ? cb4 : zero;
+        c += min(cb5.a, cb1.a) > 100.667 ? cb5 : zero;
+        c += min(cb6.a, cb1.a) > 100.833 ? cb6 : zero;
 
         return c / floor(c.a * 0.01f);
     }

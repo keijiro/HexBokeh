@@ -1404,11 +1404,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 4800000, guid: a79ad3c08a37149b68459b8d3b0b432e, type: 3}
-  focalLength: 5
+  focalLength: 4.88999987
   focalSize: .129999995
-  aperture: 6.92999983
+  aperture: 12
   visualizeCoc: 0
-  maxDist: 2.17000008
+  maxDist: 2.5
 --- !u!1 &1072975546
 GameObject:
   m_ObjectHideFlags: 0
