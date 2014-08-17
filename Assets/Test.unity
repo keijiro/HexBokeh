@@ -4529,7 +4529,7 @@ MonoBehaviour:
   focalSize: .400000006
   aperture: 14
   visualizeCoc: 0
-  maxDist: 2
+  maxDist: 2.5
 --- !u!1 &1714753362
 GameObject:
   m_ObjectHideFlags: 0
@@ -4640,5 +4640,5 @@ MonoBehaviour:
   rotationAmount: 15
   positionComponents: {x: 1, y: 1, z: 1}
   rotationComponents: {x: 1, y: 1, z: 1}
-  positionOctave: 3
-  rotationOctave: 3
+  positionOctave: 2
+  rotationOctave: 2
