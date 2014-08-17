@@ -1,58 +1,91 @@
-﻿Shader "Hidden/HexBokeh"
+﻿//
+// HexBokeh - A Fast DOF Shader With Hexagonal Apertures
+//
+// Copyright (C) 2014 Keijiro Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+//
+// This shader is based on McIntosh's paper "Efficiently Simulating the Bokeh of
+// Polygonal Apertures in a Post-Process Depth of Field Shader". For further
+// details see the paper below.
+//
+// http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
+//
+
+Shader "Hidden/HexBokeh"
 {
     Properties
     {
         _MainTex("-", 2D) = "black"{}
-        _BlurTex("-", 2D) = "black"{}
+        _BlurTex1("-", 2D) = "black"{}
+        _BlurTex2("-", 2D) = "black"{}
     }
 
     CGINCLUDE
 
     #include "UnityCG.cginc"
 
+    // Source image.
     sampler2D _MainTex;
     float4 _MainTex_TexelSize;
 
+    // Blurred image 1 (used only on the combiner)
     sampler2D _BlurTex1;
     float4 _BlurTex1_TexelSize;
 
+    // Blurred image 2 (used only on the combiner)
     sampler2D _BlurTex2;
     float4 _BlurTex2_TexelSize;
 
-    float4 _BlurDisp;
-    float _MaxDist;
-
+    // Camera depth texture.
     sampler2D_float _CameraDepthTexture;
 
-    // 1, focal_size, 1/aperture, distance01
-    float4 _CurveParams;
+    // Parameters for the CoC writer.
+    float3 _CurveParams; // focal_size, 1/aperture, distance01
 
-    // zero vector
-    static const float4 zero = float4(0, 0, 0, 0);
+    // Parameters for the blur filter.
+    float4 _BlurDisp;
 
     //
-    // 1st pass - CoC to alpha channel
+    // 1st pass - Write CoC into the alpha channel
     //
 
     float4 frag_write_coc(v2f_img i) : SV_Target
     {
         float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy));
-        float a = _CurveParams.z * abs(d - _CurveParams.w) / (d + 1e-5f);
-        return float4(0, 0, 0, saturate(a - _CurveParams.y));
+        float a = _CurveParams.y * abs(d - _CurveParams.z) / (d + 1e-5f);
+        return float4(0, 0, 0, saturate(a - _CurveParams.x));
     }
 
     //
     // 2nd pass - Visualize CoC
     //
 
-    float4 frag_alpha_to_gray(v2f_img i) : SV_Target
+    float4 frag_alpha_to_grayscale(v2f_img i) : SV_Target
     {
         float a = tex2D(_MainTex, i.uv).a;
         return float4(a, a, a, a);
     }
 
     //
-    // 3rd pass - separable blur filter
+    // 3rd pass - Separable blur filter
     //
 
     struct v2f_blur
@@ -137,10 +170,10 @@
     }
 
     //
-    // 4th pass - combiner
+    // 4th pass - Combiner
     //
 
-    float4 frag_final(v2f_img i) : SV_Target 
+    float4 frag_combiner(v2f_img i) : SV_Target 
     {
         float4 c1 = tex2D(_BlurTex1, i.uv);
         float4 c2 = tex2D(_BlurTex2, i.uv);
@@ -149,13 +182,9 @@
 
     ENDCG 
 
-    //
-    // Subshader definitions.
-    //
-
     Subshader
     {
-        // 1st pass - CoC to alpha channel
+        // 0: CoC
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -167,18 +196,18 @@
             ENDCG
         }
 
-        // 2nd pass - Visualize CoC
+        // 1: CoC visualizer
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             Fog { Mode off }      
             CGPROGRAM
             #pragma vertex vert_img
-            #pragma fragment frag_alpha_to_gray
+            #pragma fragment frag_alpha_to_grayscale
             ENDCG
         }
 
-        // 3rd pass - separable blur filter
+        // 2: Separable blur filter
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -191,7 +220,7 @@
             ENDCG
         }
 
-        // 5th pass - combiner
+        // 3: Combiner
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -200,7 +229,7 @@
             #pragma glsl
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_final
+            #pragma fragment frag_combiner
             #pragma glsl
             ENDCG
         }

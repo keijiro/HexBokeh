@@ -1,5 +1,33 @@
-﻿// Polygonal Bokeh
-// http://ivizlab.sfu.ca/papers/cgf2012.pdf
+﻿//
+// HexBokeh - A Fast DOF Shader With Hexagonal Apertures
+//
+// Copyright (C) 2014 Keijiro Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+//
+// This shader is based on McIntosh's paper "Efficiently Simulating the Bokeh of
+// Polygonal Apertures in a Post-Process Depth of Field Shader". For further
+// details see the paper below.
+//
+// http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
+//
 
 using UnityEngine;
 using System.Collections;
@@ -11,13 +39,14 @@ public class HexBokeh : MonoBehaviour
     // Reference to the shader.
     [SerializeField] Shader shader;
 
-    // Focus settings.
+    // Camera parameters.
     public float focalLength = 10.0f;
-    [Range(0, 2)]
     public float focalSize = 0.05f;
     public float aperture = 11.5f;
-    public bool visualizeCoc;
-    public float maxDist = 1;
+    public bool visualize;
+
+    // Blur filter settings.
+    public float sampleDist = 1;
 
     // Temporary objects.
     Material material;
@@ -34,25 +63,21 @@ public class HexBokeh : MonoBehaviour
         material.hideFlags = HideFlags.DontSave;
     }
 
-    void UpdateFocus()
-    {
-        var point = focalLength * camera.transform.forward + camera.transform.position;
-        var dist01 = camera.WorldToViewportPoint(point).z / (camera.farClipPlane - camera.nearClipPlane);
-        material.SetVector("_CurveParams", new Vector4(1.0f, focalSize, aperture / 10.0f, dist01));
-    }
-
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         SetUpObjects();
 
-        UpdateFocus();
+        // Update the curve parameter.
+        var point = focalLength * camera.transform.forward + camera.transform.position;
+        var dist01 = camera.WorldToViewportPoint(point).z / (camera.farClipPlane - camera.nearClipPlane);
+        material.SetVector("_CurveParams", new Vector4(focalSize, aperture / 10.0f, dist01, 0));
 
-        material.SetFloat("_MaxDist", maxDist);
-
+        // Write CoC into the alpha channel.
         Graphics.Blit(source, source, material, 0);
 
-        if (visualizeCoc)
+        if (visualize)
         {
+            // Visualize the CoC.
             Graphics.Blit(source, destination, material, 1);
         }
         else
@@ -61,17 +86,22 @@ public class HexBokeh : MonoBehaviour
             var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
             var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
 
-            material.SetVector("_BlurDisp", new Vector4(1, 0, -1, 0) * maxDist);
+            // 1st separable filter: horizontal blur.
+            material.SetVector("_BlurDisp", new Vector4(1, 0, -1, 0) * sampleDist);
             Graphics.Blit(source, rt1, material, 2);
 
-            material.SetVector("_BlurDisp", new Vector4(-0.5f, -1, 0.5f, 1) * maxDist);
+            // 2nd separable filter: skewed vertical blur (left).
+            material.SetVector("_BlurDisp", new Vector4(-0.5f, -1, 0.5f, 1) * sampleDist);
             Graphics.Blit(rt1, rt2, material, 2);
 
-            material.SetVector("_BlurDisp", new Vector4(0.5f, -1, -0.5f, 1) * maxDist);
+            // 3rd separable filter: skewed vertical blur (right).
+            material.SetVector("_BlurDisp", new Vector4(0.5f, -1, -0.5f, 1) * sampleDist);
             Graphics.Blit(rt1, rt3, material, 2);
 
+            // Combine the result.
             material.SetTexture("_BlurTex1", rt2);
             material.SetTexture("_BlurTex2", rt3);
+
             Graphics.Blit(source, destination, material, 3);
 
             material.SetTexture("_BlurTex1", null);
