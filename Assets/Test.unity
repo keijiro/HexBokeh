@@ -4529,7 +4529,8 @@ MonoBehaviour:
   focalSize: .400000006
   aperture: 14
   visualize: 0
-  sampleDist: 2.5
+  nearBlur: 1
+  sampleDist: 2
 --- !u!1 &1714753362
 GameObject:
   m_ObjectHideFlags: 0

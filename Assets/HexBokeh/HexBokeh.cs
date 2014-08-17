@@ -44,6 +44,7 @@ public class HexBokeh : MonoBehaviour
     public float focalSize = 0.05f;
     public float aperture = 11.5f;
     public bool visualize;
+    public bool nearBlur;
 
     // Blur filter settings.
     public float sampleDist = 1;
@@ -66,6 +67,18 @@ public class HexBokeh : MonoBehaviour
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         SetUpObjects();
+
+        // Apply the shader variant option.
+        if (nearBlur)
+        {
+            material.EnableKeyword("NEAR_ON");
+            material.DisableKeyword("NEAR_OFF");
+        }
+        else
+        {
+            material.DisableKeyword("NEAR_ON");
+            material.EnableKeyword("NEAR_OFF");
+        }
 
         // Update the curve parameter.
         var point = focalLength * camera.transform.forward + camera.transform.position;

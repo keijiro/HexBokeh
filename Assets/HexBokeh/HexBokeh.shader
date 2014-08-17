@@ -42,6 +42,9 @@ Shader "Hidden/HexBokeh"
 
     #include "UnityCG.cginc"
 
+    // Shader variants.
+    #pragma multi_compile NEAR_ON NEAR_OFF
+
     // Source image.
     sampler2D _MainTex;
     float4 _MainTex_TexelSize;
@@ -70,7 +73,11 @@ Shader "Hidden/HexBokeh"
     float4 frag_write_coc(v2f_img i) : SV_Target
     {
         float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy));
+#ifdef NEAR_OFF
+        float a = _CurveParams.y * (d - _CurveParams.z) / (d + 1e-5f);
+#else
         float a = _CurveParams.y * abs(d - _CurveParams.z) / (d + 1e-5f);
+#endif
         return float4(0, 0, 0, saturate(a - _CurveParams.x));
     }
 
@@ -136,6 +143,26 @@ Shader "Hidden/HexBokeh"
         float4 cb = tex2D(_MainTex, i.uv_bc.xy);
         float4 cc = tex2D(_MainTex, i.uv_bc.zw);
 
+        float s = 1;
+        float a = c.a;
+
+#ifdef NEAR_OFF
+
+        if (min(c1.a, a) > 1.0 / 7 * 1) { c += c1; s += 1; }
+        if (min(c2.a, a) > 1.0 / 7 * 1) { c += c2; s += 1; }
+        if (min(c3.a, a) > 1.0 / 7 * 2) { c += c3; s += 1; }
+        if (min(c4.a, a) > 1.0 / 7 * 2) { c += c4; s += 1; }
+        if (min(c5.a, a) > 1.0 / 7 * 3) { c += c5; s += 1; }
+        if (min(c6.a, a) > 1.0 / 7 * 3) { c += c6; s += 1; }
+        if (min(c7.a, a) > 1.0 / 7 * 4) { c += c7; s += 1; }
+        if (min(c8.a, a) > 1.0 / 7 * 4) { c += c8; s += 1; }
+        if (min(c9.a, a) > 1.0 / 7 * 5) { c += c9; s += 1; }
+        if (min(ca.a, a) > 1.0 / 7 * 5) { c += ca; s += 1; }
+        if (min(cb.a, a) > 1.0 / 7 * 6) { c += cb; s += 1; }
+        if (min(cc.a, a) > 1.0 / 7 * 6) { c += cc; s += 1; }
+
+#else
+
         float d  = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
         float d1 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_12.xy);
         float d2 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_12.zw);
@@ -150,9 +177,6 @@ Shader "Hidden/HexBokeh"
         float db = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_bc.xy);
         float dc = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_bc.zw);
 
-        float s = 1;
-        float a = c.a;
-
         if ((d1 <= d ? c1.a : min(c1.a, a)) > 1.0 / 7 * 1) { c += c1; s += 1; }
         if ((d2 <= d ? c2.a : min(c2.a, a)) > 1.0 / 7 * 1) { c += c2; s += 1; }
         if ((d3 <= d ? c3.a : min(c3.a, a)) > 1.0 / 7 * 2) { c += c3; s += 1; }
@@ -165,6 +189,8 @@ Shader "Hidden/HexBokeh"
         if ((da <= d ? ca.a : min(ca.a, a)) > 1.0 / 7 * 5) { c += ca; s += 1; }
         if ((db <= d ? cb.a : min(cb.a, a)) > 1.0 / 7 * 6) { c += cb; s += 1; }
         if ((dc <= d ? cc.a : min(cc.a, a)) > 1.0 / 7 * 6) { c += cc; s += 1; }
+
+#endif
 
         return c / s;
     }
