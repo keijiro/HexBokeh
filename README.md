@@ -4,11 +4,17 @@ HexBokeh
 HexBokeh is an image effect for Unity which simulates depth of field with
 hexagonal apertures.
 
-The original technique was [described by L. McIntosh][1]. The shader in this
+![screenshot][1]
+
+[Video][2]
+
+The original technique was [described by L. McIntosh][3]. The shader in this
 package is a straightforward implementation of his technique with a few minor
 tweaks.
 
-[1]: http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
+[1]: http://keijiro.github.io/HexBokeh/screenshot1.png
+[2]: http://vimeo.com/103702704
+[3]: http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
 
 License
 -------
