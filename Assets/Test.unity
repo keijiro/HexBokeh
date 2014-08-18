@@ -4530,6 +4530,7 @@ MonoBehaviour:
   aperture: 14
   visualize: 0
   nearBlur: 1
+  sampleCount: 1
   sampleDist: 2
 --- !u!1 &1714753362
 GameObject:

@@ -43,7 +43,8 @@ Shader "Hidden/HexBokeh"
     #include "UnityCG.cginc"
 
     // Shader variants.
-    #pragma multi_compile NEAR_ON NEAR_OFF
+    #pragma multi_compile NEAR_OFF NEAR_ON
+    #pragma multi_compile SAMPLE_LOW SAMPLE_HIGH
 
     // Source image.
     sampler2D _MainTex;
@@ -73,10 +74,10 @@ Shader "Hidden/HexBokeh"
     float4 frag_write_coc(v2f_img i) : SV_Target
     {
         float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy));
-#ifdef NEAR_OFF
-        float a = _CurveParams.y * (d - _CurveParams.z) / (d + 1e-5f);
-#else
+#ifdef NEAR_ON
         float a = _CurveParams.y * abs(d - _CurveParams.z) / (d + 1e-5f);
+#else
+        float a = _CurveParams.y * (d - _CurveParams.z) / (d + 1e-5f);
 #endif
         return float4(0, 0, 0, saturate(a - _CurveParams.x));
     }
@@ -102,9 +103,11 @@ Shader "Hidden/HexBokeh"
         float4 uv_12 : TEXCOORD1;
         float4 uv_34 : TEXCOORD2;
         float4 uv_56 : TEXCOORD3;
+#ifdef SAMPLE_HIGH
         float4 uv_78 : TEXCOORD4;
         float4 uv_9a : TEXCOORD5;
         float4 uv_bc : TEXCOORD6;
+#endif
     };
 
     v2f_blur vert_blur(appdata_img v)
@@ -120,9 +123,11 @@ Shader "Hidden/HexBokeh"
         o.uv_12 = uv + d;
         o.uv_34 = uv + d * 2;
         o.uv_56 = uv + d * 3;
+#ifdef SAMPLE_HIGH
         o.uv_78 = uv + d * 4;
         o.uv_9a = uv + d * 5;
         o.uv_bc = uv + d * 6;
+#endif
 
         return o;
     }
@@ -136,32 +141,19 @@ Shader "Hidden/HexBokeh"
         float4 c4 = tex2D(_MainTex, i.uv_34.zw);
         float4 c5 = tex2D(_MainTex, i.uv_56.xy);
         float4 c6 = tex2D(_MainTex, i.uv_56.zw);
+#ifdef SAMPLE_HIGH
         float4 c7 = tex2D(_MainTex, i.uv_78.xy);
         float4 c8 = tex2D(_MainTex, i.uv_78.zw);
         float4 c9 = tex2D(_MainTex, i.uv_9a.xy);
         float4 ca = tex2D(_MainTex, i.uv_9a.zw);
         float4 cb = tex2D(_MainTex, i.uv_bc.xy);
         float4 cc = tex2D(_MainTex, i.uv_bc.zw);
+#endif
 
         float s = 1;
         float a = c.a;
 
-#ifdef NEAR_OFF
-
-        if (min(c1.a, a) > 1.0 / 7 * 1) { c += c1; s += 1; }
-        if (min(c2.a, a) > 1.0 / 7 * 1) { c += c2; s += 1; }
-        if (min(c3.a, a) > 1.0 / 7 * 2) { c += c3; s += 1; }
-        if (min(c4.a, a) > 1.0 / 7 * 2) { c += c4; s += 1; }
-        if (min(c5.a, a) > 1.0 / 7 * 3) { c += c5; s += 1; }
-        if (min(c6.a, a) > 1.0 / 7 * 3) { c += c6; s += 1; }
-        if (min(c7.a, a) > 1.0 / 7 * 4) { c += c7; s += 1; }
-        if (min(c8.a, a) > 1.0 / 7 * 4) { c += c8; s += 1; }
-        if (min(c9.a, a) > 1.0 / 7 * 5) { c += c9; s += 1; }
-        if (min(ca.a, a) > 1.0 / 7 * 5) { c += ca; s += 1; }
-        if (min(cb.a, a) > 1.0 / 7 * 6) { c += cb; s += 1; }
-        if (min(cc.a, a) > 1.0 / 7 * 6) { c += cc; s += 1; }
-
-#else
+#ifdef NEAR_ON
 
         float d  = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
         float d1 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_12.xy);
@@ -170,12 +162,14 @@ Shader "Hidden/HexBokeh"
         float d4 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_34.zw);
         float d5 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_56.xy);
         float d6 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_56.zw);
+#ifdef SAMPLE_HIGH
         float d7 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_78.xy);
         float d8 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_78.zw);
         float d9 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_9a.xy);
         float da = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_9a.zw);
         float db = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_bc.xy);
         float dc = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv_bc.zw);
+#endif
 
         if ((d1 <= d ? c1.a : min(c1.a, a)) > 1.0 / 7 * 1) { c += c1; s += 1; }
         if ((d2 <= d ? c2.a : min(c2.a, a)) > 1.0 / 7 * 1) { c += c2; s += 1; }
@@ -183,14 +177,33 @@ Shader "Hidden/HexBokeh"
         if ((d4 <= d ? c4.a : min(c4.a, a)) > 1.0 / 7 * 2) { c += c4; s += 1; }
         if ((d5 <= d ? c5.a : min(c5.a, a)) > 1.0 / 7 * 3) { c += c5; s += 1; }
         if ((d6 <= d ? c6.a : min(c6.a, a)) > 1.0 / 7 * 3) { c += c6; s += 1; }
+#ifdef SAMPLE_HIGH
         if ((d7 <= d ? c7.a : min(c7.a, a)) > 1.0 / 7 * 4) { c += c7; s += 1; }
         if ((d8 <= d ? c8.a : min(c8.a, a)) > 1.0 / 7 * 4) { c += c8; s += 1; }
         if ((d9 <= d ? c9.a : min(c9.a, a)) > 1.0 / 7 * 5) { c += c9; s += 1; }
         if ((da <= d ? ca.a : min(ca.a, a)) > 1.0 / 7 * 5) { c += ca; s += 1; }
         if ((db <= d ? cb.a : min(cb.a, a)) > 1.0 / 7 * 6) { c += cb; s += 1; }
         if ((dc <= d ? cc.a : min(cc.a, a)) > 1.0 / 7 * 6) { c += cc; s += 1; }
-
 #endif
+
+#else // NEAR_ON
+
+        if (min(c1.a, a) > 1.0 / 7 * 1) { c += c1; s += 1; }
+        if (min(c2.a, a) > 1.0 / 7 * 1) { c += c2; s += 1; }
+        if (min(c3.a, a) > 1.0 / 7 * 2) { c += c3; s += 1; }
+        if (min(c4.a, a) > 1.0 / 7 * 2) { c += c4; s += 1; }
+        if (min(c5.a, a) > 1.0 / 7 * 3) { c += c5; s += 1; }
+        if (min(c6.a, a) > 1.0 / 7 * 3) { c += c6; s += 1; }
+#ifdef SAMPLE_HIGH
+        if (min(c7.a, a) > 1.0 / 7 * 4) { c += c7; s += 1; }
+        if (min(c8.a, a) > 1.0 / 7 * 4) { c += c8; s += 1; }
+        if (min(c9.a, a) > 1.0 / 7 * 5) { c += c9; s += 1; }
+        if (min(ca.a, a) > 1.0 / 7 * 5) { c += ca; s += 1; }
+        if (min(cb.a, a) > 1.0 / 7 * 6) { c += cb; s += 1; }
+        if (min(cc.a, a) > 1.0 / 7 * 6) { c += cc; s += 1; }
+#endif
+
+#endif // NEAR_ON
 
         return c / s;
     }

@@ -47,6 +47,8 @@ public class HexBokeh : MonoBehaviour
     public bool nearBlur;
 
     // Blur filter settings.
+    public enum SampleCount { Low, High }
+    public SampleCount sampleCount = SampleCount.High;
     public float sampleDist = 1;
 
     // Temporary objects.
@@ -70,15 +72,14 @@ public class HexBokeh : MonoBehaviour
 
         // Apply the shader variant option.
         if (nearBlur)
-        {
             material.EnableKeyword("NEAR_ON");
-            material.DisableKeyword("NEAR_OFF");
-        }
         else
-        {
             material.DisableKeyword("NEAR_ON");
-            material.EnableKeyword("NEAR_OFF");
-        }
+
+        if (sampleCount == SampleCount.High)
+            material.EnableKeyword("SAMPLE_HIGH");
+        else
+            material.DisableKeyword("SAMPLE_HIGH");
 
         // Update the curve parameter.
         var point = focalLength * camera.transform.forward + camera.transform.position;

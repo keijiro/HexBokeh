@@ -41,6 +41,7 @@ public class HexBokehEditor : Editor
     SerializedProperty propAperture;
     SerializedProperty propVisualize;
     SerializedProperty propNearBlur;
+    SerializedProperty propSampleCount;
     SerializedProperty propSampleDist;
 
     void OnEnable()
@@ -50,6 +51,7 @@ public class HexBokehEditor : Editor
         propAperture    = serializedObject.FindProperty("aperture");
         propVisualize   = serializedObject.FindProperty("visualize");
         propNearBlur    = serializedObject.FindProperty("nearBlur");
+        propSampleCount = serializedObject.FindProperty("sampleCount");
         propSampleDist  = serializedObject.FindProperty("sampleDist");
     }
 
@@ -62,6 +64,7 @@ public class HexBokehEditor : Editor
         EditorGUILayout.PropertyField(propAperture);
         EditorGUILayout.PropertyField(propVisualize, new GUIContent("Visualize CoC"));
         EditorGUILayout.PropertyField(propNearBlur);
+        EditorGUILayout.PropertyField(propSampleCount);
         EditorGUILayout.PropertyField(propSampleDist, new GUIContent("Sample Distance"));
 
         serializedObject.ApplyModifiedProperties();
