@@ -40,6 +40,7 @@ public class HexBokeh : MonoBehaviour
     [SerializeField] Shader shader;
 
     // Camera parameters.
+    public Transform focalTarget;
     public float focalLength = 10.0f;
     public float focalSize = 0.05f;
     public float aperture = 11.5f;
@@ -53,6 +54,16 @@ public class HexBokeh : MonoBehaviour
 
     // Temporary objects.
     Material material;
+
+    // Calculate the focal point.
+    Vector3 focalPoint {
+        get {
+            if (focalTarget != null)
+                return focalTarget.position;
+            else
+                return focalLength * camera.transform.forward + camera.transform.position;
+        }
+    }
 
     void OnEnable()
     {
@@ -82,8 +93,7 @@ public class HexBokeh : MonoBehaviour
             material.DisableKeyword("SAMPLE_HIGH");
 
         // Update the curve parameter.
-        var point = focalLength * camera.transform.forward + camera.transform.position;
-        var dist01 = camera.WorldToViewportPoint(point).z / (camera.farClipPlane - camera.nearClipPlane);
+        var dist01 = camera.WorldToViewportPoint(focalPoint).z / (camera.farClipPlane - camera.nearClipPlane);
         material.SetVector("_CurveParams", new Vector4(focalSize, aperture / 10.0f, dist01, 0));
 
         // Write CoC into the alpha channel.

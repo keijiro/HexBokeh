@@ -36,6 +36,7 @@ using System.Collections;
 [CustomEditor(typeof(HexBokeh)), CanEditMultipleObjects]
 public class HexBokehEditor : Editor
 {
+    SerializedProperty propFocalTarget;
     SerializedProperty propFocalLength;
     SerializedProperty propFocalSize;
     SerializedProperty propAperture;
@@ -46,6 +47,7 @@ public class HexBokehEditor : Editor
 
     void OnEnable()
     {
+        propFocalTarget = serializedObject.FindProperty("focalTarget");
         propFocalLength = serializedObject.FindProperty("focalLength");
         propFocalSize   = serializedObject.FindProperty("focalSize");
         propAperture    = serializedObject.FindProperty("aperture");
@@ -59,7 +61,12 @@ public class HexBokehEditor : Editor
     {
         serializedObject.Update();
 
-        EditorGUILayout.PropertyField(propFocalLength);
+        EditorGUILayout.PropertyField(propFocalTarget);
+
+        if (propFocalTarget.hasMultipleDifferentValues ||
+            propFocalTarget.objectReferenceValue == null)
+            EditorGUILayout.PropertyField(propFocalLength);
+
         EditorGUILayout.PropertyField(propFocalSize);
         EditorGUILayout.PropertyField(propAperture);
         EditorGUILayout.PropertyField(propVisualize, new GUIContent("Visualize CoC"));
